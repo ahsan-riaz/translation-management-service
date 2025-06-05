@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+    web:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        volumes:
+            - ./:/var/www/html
+        ports:
+            - 8080:80
+        depends_on:
+            - db
+        networks:
+            - internal
+    db:
+        image: mysql:latest
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+        ports:
+            - 3306:3306
+        volumes:
+            - db:/var/lib/mysql
+        networks:
+            - internal
+
+volumes:
+    db:
+
+networks:
+    internal:
+        driver: bridge

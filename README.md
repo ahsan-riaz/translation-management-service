@@ -1,61 +1,158 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Translation Management Service (Laravel 12)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A scalable and efficient RESTful API to manage multilingual translations, built using Laravel 12. It supports CRUD operations, tagging, filtering, and exporting translation strings.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Manage translation keys, values, and associated tags
+- Locale-based export in JSON format
+- Token-based API authentication (no OAuth)
+- Optimized for high performance (response time < 200ms for general use)
+- Scalability tested with 100,000+ records
+- Dockerized for easy development
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- Laravel 12 (Framework)
+- MySQL 8 (Database)
+- PHP 8.2 (via Docker)
+- Nginx (Web server)
+- PHPUnit / Pest (Testing)
+- Token-based authentication (custom middleware)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation (Dockerized)
 
-## Laravel Sponsors
+1. **Clone the repository**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+git clone https://github.com/your-username/translation-service.git
+cd translation-service
+````
 
-### Premium Partners
+2. **Copy environment file**
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+cp .env.example .env
+```
 
-## Contributing
+3. **Start the Docker containers**
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+docker-compose up -d --build
+```
 
-## Code of Conduct
+4. **Install dependencies and run migrations**
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+docker exec -it laravel_app bash
+composer install
+php artisan migrate --seed
+```
 
-## Security Vulnerabilities
+5. **Access the app**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```text
+http://localhost:8080
+```
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Authentication
+
+This service uses **token-based auth** via an `Authorization: Bearer <token>` header.
+
+### Example Token Setup
+
+```bash
+php artisan tinker
+>>> \App\Models\User::factory()->create(['api_token' => hash('sha256', 'your-token')]);
+```
+
+Then use the token in API requests:
+
+```http
+Authorization: Bearer your-token
+```
+
+---
+
+## API Endpoints
+
+All endpoints are prefixed with `/api/translations`.
+
+| Method | Endpoint                            | Description                                               | Auth Required |
+| ------ | ----------------------------------- | --------------------------------------------------------- | ------------- |
+| GET    | `/api/translations`                 | List translations (filterable by `key`, `content`, `tag`) | ✅             |
+| POST   | `/api/translations`                 | Create a new translation                                  | ✅             |
+| GET    | `/api/translations/{id}`            | View a specific translation                               | ✅             |
+| PUT    | `/api/translations/{id}`            | Update a translation                                      | ✅             |
+| GET    | `/api/translations/export/{locale}` | Export all translations for a locale (JSON)               | ✅             |
+
+---
+
+### Export Example
+
+```bash
+curl -H "Authorization: Bearer your-token" \
+     http://localhost:8080/api/translations/export/en
+```
+
+**Response:**
+
+```json
+{
+  "greeting.hello": "Hello",
+  "homepage.title": "Welcome"
+}
+```
+
+---
+
+## Scalability
+
+* Includes a factory-based seed command to generate 100,000+ translation records for load testing.
+
+Run with:
+
+```bash
+php artisan db:seed --class=LargeTranslationSeeder
+```
+
+---
+
+## Running Tests
+
+```bash
+docker exec -it laravel_app php artisan test
+```
+
+## Test Users
+
+You can generate test users via:
+
+```bash
+php artisan tinker
+>>> \App\Models\User::factory()->create(['api_token' => hash('sha256', 'testtoken')]);
+```
+
+Use this in requests:
+
+```http
+Authorization: Bearer testtoken
+```
+
+---
+
+## Docker Summary
+
+| Service | URL                                            | Port |
+| ------- | ---------------------------------------------- | ---- |
+| App     | [http://localhost:8080](http://localhost:8080) | 8080 |
+| MySQL   | Internal only                                  | 3306 |
+
