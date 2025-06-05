@@ -83,19 +83,11 @@ class TranslationService
 
     public function export(string $locale): array
     {
-        $translations = Translation::with(['values' => function ($q) use ($locale) {
-            $q->where('locale', $locale);
-        }])->get();
-
-        $result = [];
-
-        foreach ($translations as $translation) {
-            $value = $translation->values->first()?->value;
-            if ($value) {
-                $result[$translation->key] = $value;
-            }
-        }
-
-        return $result;
+        return Translation::join('translation_values', 'translations.id', '=', 'translation_values.translation_id')
+            ->where('translation_values.locale', $locale)
+            ->select('translations.key', 'translation_values.value')
+            ->get()
+            ->pluck('value', 'key')
+            ->toArray();
     }
 }
